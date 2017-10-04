@@ -92,6 +92,9 @@ int main() {
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
 
+
+
+					vector<double> solution = mpc.Solve(x0, coeffs);
           /*
           * TODO: Calculate steering angle and throttle using MPC.
           *
@@ -101,7 +104,11 @@ int main() {
           double steer_value;
           double throttle_value;
 
-          json msgJson;
+					steer_value = .00;
+					throttle_value = .5;
+
+
+					json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
           msgJson["steering_angle"] = steer_value;
@@ -114,7 +121,14 @@ int main() {
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
 
-          msgJson["mpc_x"] = mpc_x_vals;
+					mpc_x_vals.push_back(1);
+					mpc_x_vals.push_back(2);
+					mpc_x_vals.push_back(3);
+					mpc_y_vals.push_back(1);
+					mpc_y_vals.push_back(2);
+					mpc_y_vals.push_back(3);
+
+					msgJson["mpc_x"] = mpc_x_vals;
           msgJson["mpc_y"] = mpc_y_vals;
 
           //Display the waypoints/reference line

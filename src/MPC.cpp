@@ -43,9 +43,10 @@ class FG_eval {
 
 		// Minimize the error by calculating it based on our state
 		for (int t = 0; t < N; t++){
-			fg[0] = CppAD::pow(vars[delta_start + t], 2);
+
+			fg[0] += CppAD::pow(vars[cte_start + t], 2);
 			fg[0] += CppAD::pow(vars[epsi_start + t], 2);
-			fg[0] += CppAD::pow(vars[v_start + t], 2);
+			fg[0] += CppAD::pow(vars[v_start + t] - 35, 2);
 		}
 
 		// Add smoothness to our turns, by taxing any change in acceleration and yaw
@@ -56,8 +57,8 @@ class FG_eval {
 
 		// Add further smoothness by taxing the rate of change of our acceleration and yaw
 		for (int t=0; t < N - 2; t++){
-			fg[0] += 100*CppAD::pow(vars[delta_start + t] - vars[delta_start + t + 1], 2);
-			fg[0] += 100*CppAD::pow(vars[a_start + t] - vars[a_start + t + 1], 2);
+			fg[0] += 10*CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+			fg[0] += 10*CppAD::pow(vars[a_start + t + 1] - vars[a_start + t ], 2);
 		}
 
 		fg[1 + x_start] = vars[x_start];
@@ -71,7 +72,7 @@ class FG_eval {
 		for (int t = 1; t < N-1; t++) {
 
 			// Future state t+1
-			AD<double> x1 = vars[x_start + t];
+      AD<double> x1 = vars[x_start + t];
 			AD<double> y1 = vars[y_start + t];
 			AD<double> psi1 = vars[psi_start + t];
 			AD<double> v1 = vars[v_start + t];
@@ -233,7 +234,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
 					solution.x[delta_start],   solution.x[a_start]};
 
 
-  // TODO: Return the first actuator values. The variables can be accessed with
+  // TODO: Return the first actuator values. The variables can be xaccessed with
   // `solution.x[i]`.
   //
   // {...} is shorthand for creating a vector, so auto x1 = {1.0,2.0}

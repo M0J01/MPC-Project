@@ -6,8 +6,8 @@
 using CppAD::AD;
 
 // TODO: Set the timestep length and duration
-size_t N = 25;
-double dt = .05;
+size_t N = 10;		// greatly affects your Track Jump tendancy
+double dt = .2;	// greatly drives Computing Time
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -20,6 +20,10 @@ double dt = .05;
 //
 // This is the length from front to CoG that has a similar radius.
 const double Lf = 2.67;
+
+double ref_cte = 0;
+double ref_epsi = 0;
+double ref_v = 50;
 
 size_t x_start = 0;
 size_t y_start = x_start + N;
@@ -44,23 +48,24 @@ class FG_eval {
 		// Minimize the error by calculating it based on our state
 		for (int t = 0; t < N; t++){
 
-			fg[0] += CppAD::pow(vars[cte_start + t], 2);
-			fg[0] += CppAD::pow(vars[epsi_start + t], 2);
-			fg[0] += CppAD::pow(vars[v_start + t] - 35, 2);
+			fg[0] += 500*CppAD::pow(vars[cte_start + t] - ref_cte, 2);
+			fg[0] += 50*CppAD::pow(vars[epsi_start + t] - ref_epsi, 2);
+			fg[0] += CppAD::pow(vars[v_start + t] - ref_v, 2);
 		}
 
 		// Add smoothness to our turns, by taxing any change in acceleration and yaw
 		for (int t = 0; t < N - 1; t++) {
-			fg[0] += CppAD::pow(vars[delta_start + t], 2);
-			fg[0] += CppAD::pow(vars[a_start + t], 2);
+			fg[0] += 5*CppAD::pow(vars[delta_start + t], 2);
+			fg[0] += 5*CppAD::pow(vars[a_start + t], 2);
 		}
 
 		// Add further smoothness by taxing the rate of change of our acceleration and yaw
 		for (int t=0; t < N - 2; t++){
-			fg[0] += 10*CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+			fg[0] += 2000*CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
 			fg[0] += 10*CppAD::pow(vars[a_start + t + 1] - vars[a_start + t ], 2);
 		}
 
+		// Cost is located at fg[start_pos] for each variable, so we must move values for each variable back 1.
 		fg[1 + x_start] = vars[x_start];
 		fg[1 + y_start] = vars[y_start];
 		fg[1 + psi_start] = vars[psi_start];
@@ -69,42 +74,38 @@ class FG_eval {
 		fg[1 + epsi_start] = vars[epsi_start];
 
 
-		for (int t = 1; t < N-1; t++) {
-
-			// Future state t+1
-      AD<double> x1 = vars[x_start + t];
-			AD<double> y1 = vars[y_start + t];
-			AD<double> psi1 = vars[psi_start + t];
-			AD<double> v1 = vars[v_start + t];
-			AD<double> cte1 = vars[cte_start + t];
-			AD<double> epsi1 = vars[a_start + t];
+		for (int t = 0; t < N-1; t++) { // set to t = 1 if 0 sate is @ t - 1
+			// Future state t+1, or could do t if 0 state is t-1
+      AD<double> x1 = vars[x_start + t + 1];
+			AD<double> y1 = vars[y_start + t + 1];
+			AD<double> psi1 = vars[psi_start + t + 1];
+			AD<double> v1 = vars[v_start + t + 1];
+			AD<double> cte1 = vars[cte_start + t + 1];
+			AD<double> epsi1 = vars[epsi_start + t + 1];
 
 			// State at time t
-			AD<double> x0 = vars[x_start + t - 1];
-			AD<double> y0 = vars[y_start + t - 1];
-			AD<double> psi0 = vars[psi_start + t - 1];
-			AD<double> v0 = vars[v_start + t - 1];
-			AD<double> cte0 = vars[cte_start + t - 1];
-			AD<double> epsi0 = vars[a_start + t - 1];
+			AD<double> x0 = vars[x_start + t ];
+			AD<double> y0 = vars[y_start + t ]  ;
+			AD<double> psi0 = vars[psi_start + t ];
+			AD<double> v0 = vars[v_start + t ];
+			AD<double> cte0 = vars[cte_start + t ];
+			AD<double> epsi0 = vars[epsi_start + t ];
 
 			// Actuation at time t
-			AD<double> delta0 = vars[delta_start + t - 1];
-			AD<double> a0 = vars[a_start + t - 1];
+			AD<double> delta0 = vars[delta_start + t ];
+			AD<double> a0 = vars[a_start + t];
 
-			AD<double> f0 = coeffs[0] + coeffs[1] * x0;
-			AD<double> psides0 = CppAD::atan(coeffs[1]);
+			AD<double> f0 = coeffs[0] + coeffs[1]*x0 + coeffs[2]*x0*x0 + coeffs[3]*x0*x0*x0; // if using 3rd power polynom
+			//AD<double> psides0 = CppAD::atan(coeffs[1]);
+			AD<double> psides0 = CppAD::atan(3*coeffs[3]*x0 *x0 + 2*coeffs[2]*x0 + coeffs[1]);
 
-			fg[1 + x_start + t] = x1 - (x0 + v0 * CppAD::cos(psi0) * dt);
-			fg[1 + y_start + t] = y1 - (y0 + v0 * CppAD::sin(psi0) * dt);
-			fg[1 + psi_start + t] = psi1 - (psi0 + v0 * delta0 / Lf * dt);
-			fg[1 + v_start + t] = v1 - (v0 + a0 * dt);
-			fg[1 + cte_start + t] = cte1 - ((f0 - y0) + (v0 * CppAD::sin(epsi0) * dt));
-			fg[1 + epsi_start + t] = epsi1 - ((psi0 - psides0) + (v0 * delta0 / Lf * dt));
+			fg[2 + x_start + t] = x1 - (x0 + v0 * CppAD::cos(psi0) * dt); // Have these set to 1 in orriginal code.
+			fg[2 + y_start + t] = y1 - (y0 + v0 * CppAD::sin(psi0) * dt);	// Shifted over to +2 as we shifted our 0 sate by 1 as well
+			fg[2 + psi_start + t] = psi1 - (psi0 + v0 * delta0 / Lf * dt);
+			fg[2 + v_start + t] = v1 - (v0 + a0 * dt);
+			fg[2 + cte_start + t] = cte1 - ((f0 - y0) + (v0 * CppAD::sin(epsi0) * dt));
+			fg[2 + epsi_start + t] = epsi1 - ((psi0 - psides0) + (v0 * delta0 / Lf * dt));
 		}
-			// TODO: implement MPC
-    // `fg` a vector of the cost constraints, `vars` is a vector of variable values (state & actuators)
-    // NOTE: You'll probably go back and forth between this function and
-    // the Solver function below.
   }
 };
 
@@ -119,7 +120,6 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   size_t i;
   typedef CPPAD_TESTVECTOR(double) Dvector;
 
-
 	double x = state[0];
 	double y = state[1];
 	double psi = state[2];
@@ -127,15 +127,10 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
 	double cte = state[4];
 	double epsi = state[5];
 
-  // TODO: Set the number of model variables (includes both states and inputs).
-  // For example: If the state is a 4 element vector, the actuators is a 2
-  // element vector and there are 10 timesteps. The number of variables is:
-  //
-  // 4 * 10 + 2 * 9
+	// set size of variable array
   size_t n_vars = 6*N + 2*(N-1);
-
-  // TODO: Set the number of constraints
-  size_t n_constraints = 6*N;
+	// set size of constraints
+	size_t n_constraints = 6*N;
 
   // Initial value of the independent variables.
   // SHOULD BE 0 besides initial state.
@@ -155,12 +150,13 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
 		vars_upperbound[i] = 1.0e19;
 	}
 
+
 	// The upper and lower limits of delta are set to -25 and 25
 	// degrees (values in radians).
 	// NOTE: Feel free to change this to something else.
 	for (int i = delta_start; i < a_start; i++) {
-		vars_lowerbound[i] = -0.436332;
-		vars_upperbound[i] = 0.436332;
+		vars_lowerbound[i] = -0.436332*Lf;	// Don't need the LF
+		vars_upperbound[i] = 0.436332*Lf;		// Don't need the LF
 	}
 
 	// Acceleration/decceleration upper and lower limits.
@@ -179,7 +175,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
 		constraints_lowerbound[i] = 0;
 		constraints_upperbound[i] = 0;
 	}
-
+	// set each constraint case = to initial state, as we don't have a time machine.
 	constraints_lowerbound[x_start] = x;
 	constraints_lowerbound[y_start] = y;
 	constraints_lowerbound[psi_start] = psi;
@@ -212,7 +208,8 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   options += "Sparse  true        reverse\n";
   // NOTE: Currently the solver has a maximum time limit of 0.5 seconds.
   // Change this as you see fit.
-  options += "Numeric max_cpu_time          0.5\n";
+  options += "Numeric max_cpu_time          0.5\n";		// consider decreasing based on N and dt
+																											// Simulator sends values every .02S
 
   // place to return solution
   CppAD::ipopt::solve_result<Dvector> solution;
@@ -227,17 +224,17 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
 
   // Cost
   auto cost = solution.obj_value;
-  std::cout << "Cost " << cost << std::endl;
-	return {solution.x[x_start + 1],   solution.x[y_start + 1],
-					solution.x[psi_start + 1], solution.x[v_start + 1],
-					solution.x[cte_start + 1], solution.x[epsi_start + 1],
-					solution.x[delta_start],   solution.x[a_start]};
 
+	vector<double> result;
 
-  // TODO: Return the first actuator values. The variables can be xaccessed with
-  // `solution.x[i]`.
-  //
-  // {...} is shorthand for creating a vector, so auto x1 = {1.0,2.0}
-  // creates a 2 element double vector.
-  return {};
-}
+	result.push_back(solution.x[delta_start]);		// Actuators
+	result.push_back(solution.x[a_start]);				// Acutators
+
+	for (int i = 0; i < N-1; i++){
+		result.push_back(solution.x[x_start + i + 1]);	// Path Painting x cords
+		result.push_back(solution.x[y_start + i + 1]);	// Path Painting y cords
+	}
+
+	return result;
+
+ }

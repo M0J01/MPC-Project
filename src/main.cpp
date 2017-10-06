@@ -9,6 +9,9 @@
 #include "MPC.h"
 #include "json.hpp"
 
+
+// Objectives : Speed, Accuracy
+
 // for convenience
 using json = nlohmann::json;
 
@@ -16,6 +19,8 @@ using json = nlohmann::json;
 constexpr double pi() { return M_PI; }
 double deg2rad(double x) { return x * pi() / 180; }
 double rad2deg(double x) { return x * 180 / pi(); }
+const int actuator_delay = 100;
+double Lf = 2.67;
 
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
@@ -92,125 +97,91 @@ int main() {
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
 
-          // Need to create a Polynomial here
-          // coeffs = polyfit (xvals, yvals)
+					// Convert Map Ref Cords to Car Ref Cords
+					for (int i = 0; i < ptsx.size(); i++){
+
+						double shift_x = ptsx[i]-px;
+						double shift_y = ptsy[i]-py;
+
+						ptsx[i] = (shift_x * cos(0-psi) - shift_y*sin(0 - psi));
+						ptsy[i] = (shift_x * sin(0-psi) + shift_y*cos(0 - psi));
+
+					}
 
 
-          // Need to eval the polynomail here
-          // Results = polyeval(coeffs, x )
-          // Need to Create control vectors here
-					//vector<double> solution = mpc.Solve(x0, coeffs);
+					// Covnert vector Doubles to Eigens
+					// Usefull for passing to polyfit
+					double* ptrx = &ptsx[0];
+					double* ptry = &ptsy[0];
+					Eigen::Map<Eigen::VectorXd> ptsx_transform(ptrx, 6);
+					Eigen::Map<Eigen::VectorXd> ptsy_transform(ptry, 6);
 
-          //Display the waypoints/reference line
-          vector<double> next_x_vals;
-          vector<double> next_y_vals;
+					// Calculate our poly coeffs
+					auto coeffs = polyfit(ptsx_transform, ptsy_transform, 3);
 
-          //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
-          // the points in the simulator are connected by a Yellow line
+					// calculate cross track error, and psi error
+					double cte = polyeval(coeffs, 0); // slopy cte, shortest distance from point to polynomial is real cte.
+					//double epsi = -atan(coeffs[1]);
+					double steer_value = j[1]["steering_angle"];
+					double throttle_value = j[1]["throttle"];
 
+					//double x = (v + throttle_value)*cos(steer_value)*actuator_delay/1000.0;
+					//double y = (v + throttle_value)*sin(steer_value)*actuator_delay/1000.0;
 
-          Eigen::VectorXd x_way(ptsx.size());
-          Eigen::VectorXd y_way(ptsx.size());
+					double x = 0 + v*cos(psi)*actuator_delay/1000.0;
+					//double y = cte - v*sin(psi)*actuator_delay/1000.0;
+					double y = 0 + v*sin(psi)*actuator_delay/1000.0;
+					psi = psi;
 
-          for (int i = 0; i < ptsx.size(); i++){
-            double xdiff = ptsx[i] - px;
-            double ydiff = ptsy[i] - py;
-            double h = sqrt(pow(xdiff,2) + pow(ydiff,2));
-            double psid = atan2(xdiff, ydiff);
-            double x_plot = h*sin(psi+psid);
-            double y_plot = h*cos(psi+psid);
-            next_x_vals.push_back(x_plot);
-            next_y_vals.push_back(y_plot);
-            x_way[i] = x_plot;
-            y_way[i] = y_plot;
-          }
+					double epsi = psi - atan(coeffs[1] + 2*px*coeffs[2] + 3*coeffs[3]*pow(px,2));
+					//cte = cte + v*sin(epsi)*actuator_delay/1000.0;
+					//epsi = epsi - v*steer_value/Lf*actuator_delay/1000.0;
+					cte = polyeval(coeffs, x);
 
-          Eigen::VectorXd coeffs = polyfit(x_way, y_way, 3);
-
-          std::vector<double> x_graph;
-          std::vector<double> y_graph;
-          for (int i = 0; i < 35; i++){
-            double result = polyeval(coeffs, i*8);
-            x_graph.push_back(i*8);
-            y_graph.push_back(result);
-          }
-
-          // Calculate CTE and epsi
-//          double cte = ptsy[0] - py;
-          //double cte =  polyeval(coeffs, 0) - py;
-          double epsi =  psi - atan(coeffs[1]);
-
-          std::cout << psi << "Psi" << endl;
-          std::cout << epsi << "Epsi" << endl;
-
-          // Create state for Solver
-          Eigen::VectorXd state(6);
-          state[0] = 0;
-          state[1] = 0;
-          state[2] = 0;
-          state[3] = 0;
-          state[4] = 0;
-          state[5] = 0;
-
-          // Send our State and Coeffs to our solver, ** Send state + time delayed State
-          // Get Back predicted states, and actuator commands
-          std::vector<double> solutions = mpc.Solve(state, coeffs);
-
-          double steer_value;
-          double throttle_value;
+					Eigen::VectorXd state(6);
+					state << x, y, 0, v, cte, epsi;
+					//state << 0, 0, 0, v, cte, epsi;
 
 
-          for (int i = 0; i < solutions.size(); i ++){
-            std::cout<<solutions[i] << " ";
-          }
-          std::cout << std::endl;
+					auto vars = mpc.Solve(state, coeffs);
 
-          steer_value = solutions[6]/deg2rad(25);
-          //steer_value = solutions[6]/deg2rad(25);
-          throttle_value = solutions[7];
-          //steer_value = -.01;
-          //throttle_value = .05;
+					vector<double> next_x_vals;
+					vector<double> next_y_vals;
 
-          /*
-          * TODO: Calculate steering angle and throttle using MPC.
-          *
-          * Both are in between [-1, 1].
-          *
-          */
-          // Load steer value here
-          //steer_value = solution[0];
-          //throttle_value = solution[0];
+					double poly_inc = 2.5;
+					double num_points = 25;
+					for (int i = 1; i < num_points; i++){
+						next_x_vals.push_back(poly_inc*i);
+						next_y_vals.push_back(polyeval(coeffs, poly_inc*i));
+					}
+
+
+					vector<double> mpc_x_vals;
+					vector<double> mpc_y_vals;
+					mpc_x_vals.push_back(0);
+					mpc_y_vals.push_back(0);
+					for (int i = 2; i < vars.size(); i++) {
+						if (i % 2 == 0) {
+							mpc_x_vals.push_back(vars[i]);
+						} else {
+							mpc_y_vals.push_back(vars[i]);
+						}
+					}
 
 
 					json msgJson;
-          // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
-          // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
-          msgJson["steering_angle"] = steer_value;
-          msgJson["throttle"] = throttle_value;
+					msgJson["steering_angle"] = -vars[0]/(deg2rad(25)*Lf);
+					msgJson["throttle"] = vars[1];
 
-          //Display the MPC predicted trajectory
-          vector<double> mpc_x_vals;
-          vector<double> mpc_y_vals;
-
-          mpc_x_vals.push_back(solutions[0]*8);
-          mpc_y_vals.push_back(solutions[1]*8);
-
-          //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
-          // the points in the simulator are connected by a Green line
+					msgJson["next_x"] = next_x_vals;
+					msgJson["next_y"] = next_y_vals;
 
 					msgJson["mpc_x"] = mpc_x_vals;
-          msgJson["mpc_y"] = mpc_y_vals;
+					msgJson["mpc_y"] = mpc_y_vals;
 
-
-
-          msgJson["next_x"] = x_graph;
-          msgJson["next_y"] = y_graph;
-//          msgJson["next_x"] = next_x_vals;
-//          msgJson["next_y"] = next_y_vals;
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-          //std::cout << msg << std::endl;
-          //std::cout<< px <<std::endl;
+
           // Latency
           // The purpose is to mimic real driving conditions where
           // the car does actuate the commands instantly.
@@ -220,7 +191,7 @@ int main() {
           //
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
-          this_thread::sleep_for(chrono::milliseconds(100));
+          this_thread::sleep_for(chrono::milliseconds(actuator_delay));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {

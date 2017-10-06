@@ -31,8 +31,8 @@
           <file leaf-file-name="MPC.cpp" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/src/MPC.cpp">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="493">
-                  <caret line="50" column="16" lean-forward="false" selection-start-line="50" selection-start-column="16" selection-end-line="50" selection-end-column="16" />
+                <state relative-caret-position="1105">
+                  <caret line="71" column="36" lean-forward="true" selection-start-line="71" selection-start-column="36" selection-end-line="71" selection-end-column="36" />
                   <folding />
                 </state>
               </provider>
@@ -55,9 +55,7 @@
               <provider selected="true" editor-type-id="text-editor">
                 <state relative-caret-position="2550">
                   <caret line="156" column="32" lean-forward="false" selection-start-line="156" selection-start-column="32" selection-end-line="156" selection-end-column="32" />
-                  <folding>
-                    <marker date="1507261423558" expanded="true" signature="5377:5553" ph="/.../" />
-                  </folding>
+                  <folding />
                 </state>
               </provider>
             </entry>
@@ -69,8 +67,8 @@
           <file leaf-file-name="main.cpp" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/src/main.cpp">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="425">
-                  <caret line="174" column="12" lean-forward="false" selection-start-line="174" selection-start-column="12" selection-end-line="174" selection-end-column="12" />
+                <state relative-caret-position="697">
+                  <caret line="175" column="34" lean-forward="false" selection-start-line="175" selection-start-column="34" selection-end-line="175" selection-end-column="34" />
                   <folding />
                 </state>
               </provider>
@@ -87,8 +85,8 @@
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/src/MPC.h" />
-        <option value="$PROJECT_DIR$/src/MPC.cpp" />
         <option value="$PROJECT_DIR$/src/main.cpp" />
+        <option value="$PROJECT_DIR$/src/MPC.cpp" />
       </list>
     </option>
   </component>
@@ -180,12 +178,12 @@
       <updated>1507143119886</updated>
       <workItem from="1507143121289" duration="5258000" />
       <workItem from="1507245015080" duration="14457000" />
-      <workItem from="1507260273207" duration="1080000" />
+      <workItem from="1507260273207" duration="2765000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="20795000" />
+    <option name="totallyTimeSpent" value="22480000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="323" y="26" width="1300" height="1047" extended-state="0" />
@@ -297,18 +295,18 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/MPC.cpp">
+    <entry file="file://$PROJECT_DIR$/src/main.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="493">
-          <caret line="50" column="16" lean-forward="false" selection-start-line="50" selection-start-column="16" selection-end-line="50" selection-end-column="16" />
+        <state relative-caret-position="2550">
+          <caret line="156" column="32" lean-forward="false" selection-start-line="156" selection-start-column="32" selection-end-line="156" selection-end-column="32" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main.cpp">
+    <entry file="file://$PROJECT_DIR$/src/MPC.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="425">
-          <caret line="174" column="12" lean-forward="false" selection-start-line="174" selection-start-column="12" selection-end-line="174" selection-end-column="12" />
+        <state relative-caret-position="1105">
+          <caret line="71" column="36" lean-forward="true" selection-start-line="71" selection-start-column="36" selection-end-line="71" selection-end-column="36" />
           <folding />
         </state>
       </provider>

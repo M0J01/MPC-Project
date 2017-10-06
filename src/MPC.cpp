@@ -23,7 +23,7 @@ const double Lf = 2.67;
 
 double ref_cte = 0;
 double ref_epsi = 0;
-double ref_v = 50;
+double ref_v = 75;
 
 size_t x_start = 0;
 size_t y_start = x_start + N;
@@ -61,8 +61,8 @@ class FG_eval {
 
 		// Add further smoothness by taxing the rate of change of our acceleration and yaw
 		for (int t=0; t < N - 2; t++){
-			fg[0] += 2000*CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
-			fg[0] += 10*CppAD::pow(vars[a_start + t + 1] - vars[a_start + t ], 2);
+			fg[0] += 1250*CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+			fg[0] += 50*CppAD::pow(vars[a_start + t + 1] - vars[a_start + t ], 2);
 		}
 
 		// Cost is located at fg[start_pos] for each variable, so we must move values for each variable back 1.

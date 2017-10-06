@@ -48,7 +48,7 @@ class FG_eval {
 		// Minimize the error by calculating it based on our state
 		for (int t = 0; t < N; t++){
 
-			fg[0] += 500*CppAD::pow(vars[cte_start + t] - ref_cte, 2);
+			fg[0] += 1500*CppAD::pow(vars[cte_start + t] - ref_cte, 2);
 			fg[0] += 50*CppAD::pow(vars[epsi_start + t] - ref_epsi, 2);
 			fg[0] += CppAD::pow(vars[v_start + t] - ref_v, 2);
 		}

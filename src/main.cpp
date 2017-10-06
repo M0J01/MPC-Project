@@ -128,7 +128,7 @@ int main() {
 					//double x = (v + throttle_value)*cos(steer_value)*actuator_delay/1000.0;
 					//double y = (v + throttle_value)*sin(steer_value)*actuator_delay/1000.0;
 
-					double x = 0 + v*cos(psi)*actuator_delay/1000.0;
+					double x = 0 - v*cos(psi)*actuator_delay/1000.0;
 					//double y = cte - v*sin(psi)*actuator_delay/1000.0;
 					double y = 0 + v*sin(psi)*actuator_delay/1000.0;
 					psi = psi;
@@ -137,6 +137,12 @@ int main() {
 					//cte = cte + v*sin(epsi)*actuator_delay/1000.0;
 					//epsi = epsi - v*steer_value/Lf*actuator_delay/1000.0;
 					cte = polyeval(coeffs, x);
+
+					double v_mps = v*0.44704;	// Convert to Meters / second
+					double accel = throttle_value*10*0.44704; // 1* throttle is around 10 mph/s
+					double t_d = actuator_delay/1000.0;
+					x = -(v_mps*sin(psi) + 1/2*accel*sin(psi)*t_d)*t_d;
+					y = 0 -(v_mps*sin(steer_value) + 1/2*accel*sin(steer_value)*t_d)*t_d;
 
 					Eigen::VectorXd state(6);
 					state << x, y, 0, v, cte, epsi;
@@ -155,11 +161,18 @@ int main() {
 						next_y_vals.push_back(polyeval(coeffs, poly_inc*i));
 					}
 
+					//x = 0 + v_mps*cos(-psi)*(actuator_delay+20)/1000.0;
+					std::cout << x << " X " << std::endl;
 
 					vector<double> mpc_x_vals;
 					vector<double> mpc_y_vals;
+
+					/*
 					mpc_x_vals.push_back(0);
 					mpc_y_vals.push_back(0);
+					mpc_x_vals.push_back(x);
+					mpc_y_vals.push_back(y);
+					*/
 					for (int i = 2; i < vars.size(); i++) {
 						if (i % 2 == 0) {
 							mpc_x_vals.push_back(vars[i]);
@@ -172,6 +185,7 @@ int main() {
 					json msgJson;
 					msgJson["steering_angle"] = -vars[0]/(deg2rad(25)*Lf);
 					msgJson["throttle"] = vars[1];
+					//msgJson["throttle"] = 1;
 
 					msgJson["next_x"] = next_x_vals;
 					msgJson["next_y"] = next_y_vals;

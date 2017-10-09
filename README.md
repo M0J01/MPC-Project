@@ -18,22 +18,22 @@ to enroll today, please check [here.](https://www.udacity.com/course/self-drivin
 The model uses a vehicle state vector in combination with a set of way points in order to predict
 the actuations that should be taken by the vehicle.
 
-The state vector is comprised of the P (x, y position), V (velocity), Psi (Bearing), CTE (Distance from Waypoint Polynomial), and ePsi (Bearing difference 
+The state vector is comprised of the **P** (x, y position), **V** (velocity), **Psi** (Bearing), **CTE** (Distance from Waypoint Polynomial), and ePsi (Bearing difference 
 compared to polynomial).
 
 The waypoints are provided by the simulator (assumedly from Computer vision, Particle Filtering + mapping, or some other means).
 These waypoints are converted from map coordinates to vehicle coordinates, and then turned from a discrete set of values, to a continous polynomial by our provided function, polyfit(). The waypoint polynomial is used to calulate CTE and ePsi
 
 Using our wapoint polynomial, we calculate 25 waypoints over 75m to be displayed in our simulator. This is done by
- sending the inputs to polyeval() to our next_x_vals and the returns to our next_y_vals. The simulator displays the
- values contained in next_x and next_y (with repsect to the car).
+ sending the inputs to `polyeval()` to our `next_x_vals` and the returns to our `next_y_vals`. The simulator displays the
+ values contained in next_x and next_y (with respect to the car).
  
 ### Determine Actuations
 
 #### Solve()
 We use our state and polynomial calculated in the prior step as an input to our `Solve()` function. `Solve()` shapes an array
-to match the state vector, actuation values, and a predetermined number of future states **N** (more on N later). Each state and actuaion value
-comprises N number of elements in this vector, with the first element of each variable relfecting the current state, and each element
+to match the state vector, actuation values, and a predetermined number of future states `N` (more on `N` later). Each state and actuaion value
+comprises `N` number of elements in this vector, with the first element of each variable relfecting the current state, and each element
 thereafter representing an incremental future state. `Solve()` then polulates this array with minimum and maximum values for each variable, 
 such as maximum turning angle of +/- 25 degrees, or maximum acceleration of +/- 1. Finally, the array is initialized with 
 the current state, and that state is locked so that it cannot be changed by our evaluator. `Solve()` then calls `fg_eval()`
@@ -44,9 +44,9 @@ of each state is determined by multiplying the state (or group of states) with a
 will be very costly, and low values will be less costly.
 
 For example:
-* 1500 * CTE^2  : reflects that high CTE values will be very costly
-* 1250*(delta(t = 0) - delta(t = 1))^2 : reflects that abrupt changes in steering angle will be very costly
-* 5*acceleration^2 : reflects that acceleration and deceleration will not cost very much.
+* 1500 * **CTE**^2  : reflects that high **CTE** values will be very costly
+* 1250*(**delta**(t = 0) - **delta**(t = 1))^2 : reflects that abrupt changes in steering angle will be very costly
+* 5***acceleration**^2 : reflects that acceleration and deceleration will not cost very much.
 
 `fg_eval` then establishes a set of state equations, that reflects how each state will change over time with regards to
 each other state variable, and any actuator variables.
@@ -55,7 +55,7 @@ These state equations, cost functions, and current state are fed into an optomiz
 
 #### IPOPT
 
-IPOPT uses the current state, cost functions, and state equations, N future states, and a time step dt (more on dt later) to calculate the minimum cost value possible. The state
+IPOPT uses the current state, cost functions, and state equations, `N` future states, and a time step `dt` (more on `dt` later) to calculate the minimum cost value possible. The state
 vector consists of dependant variables, while the actuators serve as independent variables. This means that the optomizer 
 can only affect the vehicle state (this a large portion of the cost) through the actuators.
 
@@ -76,7 +76,7 @@ Previous `dt` values tried include `.12` seconds, `.1` seconds, `.2` seconds `.1
 vehicle would either veer off the road, or crash into objects. When set to `0.2` seconds, turning around sharp corners became
 painfully slow.
 
-Previous vaules of N include 20, 25, and 5. These values caused the vehicle to veer off the road, or rather strange
+Previous vaules of `N` include 20, 25, and 5. These values caused the vehicle to veer off the road, or rather strange
 pathing, which resulted in circular driving in some instances.
 
 

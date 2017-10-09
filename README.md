@@ -72,6 +72,13 @@ be .175s in order accomdate the inability of the vehicle to make actuation adjus
 was chosen to be 10 in order to give a reasonable glimpse into the future (1.7 seconds), while still being low enough to 
 prevent the cost evaluation from making strange decisions.
 
+Previous `dt` values tried include `.12` seconds, `.1` seconds, `.2` seconds `.15` seconds. In all cases except `.2` seconds, the
+vehicle would either veer off the road, or crash into objects. When set to `0.2` seconds, turning around sharp corners became
+painfully slow.
+
+Previous vaules of N include 20, 25, and 5. These values caused the vehicle to veer off the road, or rather strange
+pathing, which resulted in circular driving in some instances.
+
 
 ## Controls Latency
 

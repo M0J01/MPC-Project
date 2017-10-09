@@ -1,9 +1,116 @@
-# CarND-Controls-MPC
-Self-Driving Car Engineer Nanodegree Program
+# Model Predictive Controller
 
----
+
+## Descriton
+The purpose of this program is to implement a model predictive controller to control the
+actuators of a simulated car, mainly the Steering and Acceleration.
+
+This program works in unison with a simulator, which you can find [here](https://github.com/udacity/self-driving-car-sim/releases).
+
+
+This project was completed as part of the UDACITY Self-Driving Car Engineer Nanodegree Program. For more information, or 
+to enroll today, please check [here.](https://www.udacity.com/course/self-driving-car-engineer-nanodegree--nd013) 
+
+
+## The Model
+
+### Establish Sate and Waypoints
+The model uses a vehicle state vector in combination with a set of way points in order to predict
+the actuations that should be taken by the vehicle.
+
+The state vector is comprised of the P (x, y position), V (velocity), Psi (Bearing), CTE (Distance from Waypoint Polynomial), and ePsi (Bearing difference 
+compared to polynomial).
+
+The waypoints are provided by the simulator (assumedly from Computer vision, Particle Filtering + mapping, or some other means).
+These waypoints are converted from map coordinates to vehicle coordinates, and then turned from a discrete set of values, to a continous polynomial by our provided function, polyfit(). The waypoint polynomial is used to calulate CTE and ePsi
+
+Using our wapoint polynomial, we calculate 25 waypoints over 75m to be displayed in our simulator. This is done by
+ sending the inputs to polyeval() to our next_x_vals and the returns to our next_y_vals. The simulator displays the
+ values contained in next_x and next_y (with repsect to the car).
+ 
+### Determine Actuations
+
+#### Solve()
+We use our state and polynomial calculated in the prior step as an input to our `Solve()` function. `Solve()` shapes an array
+to match the state vector, actuation values, and a predetermined number of future states **N** (more on N later). Each state and actuaion value
+comprises N number of elements in this vector, with the first element of each variable relfecting the current state, and each element
+thereafter representing an incremental future state. `Solve()` then polulates this array with minimum and maximum values for each variable, 
+such as maximum turning angle of +/- 25 degrees, or maximum acceleration of +/- 1. Finally, the array is initialized with 
+the current state, and that state is locked so that it cannot be changed by our evaluator. `Solve()` then calls `fg_eval()`
+
+#### Evaluate
+`fg_eval` is preloaded with a **cost** function, which associates a certain cost with the state of our vehicle. The cost 
+of each state is determined by multiplying the state (or group of states) with a weight. Highly weighted states
+will be very costly, and low values will be less costly.
+
+For example:
+* 1500 * CTE^2  : reflects that high CTE values will be very costly
+* 1250*(delta(t = 0) - delta(t = 1))^2 : reflects that abrupt changes in steering angle will be very costly
+* 5*acceleration^2 : reflects that acceleration and deceleration will not cost very much.
+
+`fg_eval` then establishes a set of state equations, that reflects how each state will change over time with regards to
+each other state variable, and any actuator variables.
+
+These state equations, cost functions, and current state are fed into an optomizing function, `IPOPT`.
+
+#### IPOPT
+
+IPOPT uses the current state, cost functions, and state equations, N future states, and a time step dt (more on dt later) to calculate the minimum cost value possible. The state
+vector consists of dependant variables, while the actuators serve as independent variables. This means that the optomizer 
+can only affect the vehicle state (this a large portion of the cost) through the actuators.
+
+The output of our IPOPT calculations are returned to our `Sovle()` Function by means of the array we formatted earlier.
+The acceleration and turning value for our vehicle are extracted from this array, along with the position measurements predicted 
+our optimizer. `Solve()` finally returns these values back to the main file. Where the main file implements the Acceleration
+/Turning commands, and plots the predicted x/y coordinates in Green.
+
+
+## Selection of N and dt
+
+`dt` is the amount of time between each prediction, and `N` is the number of predictions to make. `dt` was chosen to 
+be .175s in order accomdate the inability of the vehicle to make actuation adjustments faster than once every 100 ms. `N`
+was chosen to be 10 in order to give a reasonable glimpse into the future (1.7 seconds), while still being low enough to 
+prevent the cost evaluation from making strange decisions.
+
+
+## Controls Latency
+
+The 100ms latency of the controls was combated through 2 measures. The first was setting `dt` the time step between predicted
+states to a value larger than the latency. This would cause the predictions to  acomadate the delay in controls, and any messaging
+between the simulator and program.
+
+The second, and more effective method was predicting the state of the vehicle after 100ms, and using that as the state input
+to our `Solve()` function. This was accomplished using basic position equations, and an estimated scaler acceleration with
+max acceleration at 10mph/s (measured by eyeball).
+
+**Note** - The equations for predicting the future state of the vehicle could use a little tweaking, however they appear to be asound strategy
+for dealing with Latency. Setting the dt to a large value however, does not seem like a sound strategy, as it causes turning 
+to be clunky, and results in much less granular control of the vehicle. This could be dangerous in some instances. It is possible 
+that calculating a large time latency, and a short time latency prediction (2 predictions), might be a strategy to investigate
+for future developments. This would allow the large time delay to set the general path, and the small time delay to attemp to
+further optimize the vehicles manuevers. Additionally, limiting the actuators to only be able to act once every latency unit 
+would be a strategy worth investigating. This could be done by setting the maximum/minimum values in our f_g function, to be
+the previous actuation command, except where a latency timestep fell, where an actuation command would be set to max/min control bounds.
+This is mostly speculation though, and requires further efforts.
+
+
+## Problems/ Known Bugs
+
+Although the program compiles, and is able to drive around the track successfully, there are some known issues with the code
+
+* Predicted Path (green) diverges from polynomial at far away waypoints. It is speculated that this is due to our predicted
+future state surpassing our waypoints, causing our cost fucntion to make strange decisions at outer time steps.
+* Slow Turning, likely caused by a high cost associated with change in turning over time. This could likely be solved by 
+adjusting weight values associated with turn rate, and change in turn rate. Preliminary tests have caused vehicle to verge 
+off the road, however further investigation will likely prove fruitful.
+
+
+
+
+
 
 ## Dependencies
+
 
 * cmake >= 3.5
  * All OSes: [click here for installation instructions](https://cmake.org/install/)
@@ -56,77 +163,7 @@ Self-Driving Car Engineer Nanodegree Program
 
 ## Basic Build Instructions
 
-
 1. Clone this repo.
 2. Make a build directory: `mkdir build && cd build`
 3. Compile: `cmake .. && make`
 4. Run it: `./mpc`.
-
-## Tips
-
-1. It's recommended to test the MPC on basic examples to see if your implementation behaves as desired. One possible example
-is the vehicle starting offset of a straight line (reference). If the MPC implementation is correct, after some number of timesteps
-(not too many) it should find and track the reference line.
-2. The `lake_track_waypoints.csv` file has the waypoints of the lake track. You could use this to fit polynomials and points and see of how well your model tracks curve. NOTE: This file might be not completely in sync with the simulator so your solution should NOT depend on it.
-3. For visualization this C++ [matplotlib wrapper](https://github.com/lava/matplotlib-cpp) could be helpful.)
-4.  Tips for setting up your environment are available [here](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/0949fca6-b379-42af-a919-ee50aa304e6a/lessons/f758c44c-5e40-4e01-93b5-1a82aa4e044f/concepts/23d376c7-0195-4276-bdf0-e02f1f3c665d)
-
-## Editor Settings
-
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
-
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
-
-## Code Style
-
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
-
-## Project Instructions and Rubric
-
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
-
-More information is only accessible by people who are already enrolled in Term 2
-of CarND. If you are enrolled, see [the project page](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/f1820894-8322-4bb3-81aa-b26b3c6dcbaf/lessons/b1ff3be0-c904-438e-aad3-2b5379f0e0c3/concepts/1a2255a0-e23c-44cf-8d41-39b8a3c8264a)
-for instructions and the project rubric.
-
-## Hints!
-
-* You don't have to follow this directory structure, but if you do, your work
-  will span all of the .cpp files here. Keep an eye out for TODOs.
-
-## Call for IDE Profiles Pull Requests
-
-Help your fellow students!
-
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to we ensure
-that students don't feel pressured to use one IDE or another.
-
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
-
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
-
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
-
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
-
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./
-
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
-

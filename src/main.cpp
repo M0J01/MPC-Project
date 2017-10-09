@@ -125,9 +125,7 @@ int main() {
 					double steer_value = j[1]["steering_angle"];
 					double throttle_value = j[1]["throttle"];
 
-					//double x = (v + throttle_value)*cos(steer_value)*actuator_delay/1000.0;
-					//double y = (v + throttle_value)*sin(steer_value)*actuator_delay/1000.0;
-
+					//
 					double x = 0 - v*cos(psi)*actuator_delay/1000.0;
 					//double y = cte - v*sin(psi)*actuator_delay/1000.0;
 					double y = 0 + v*sin(psi)*actuator_delay/1000.0;
@@ -138,6 +136,8 @@ int main() {
 					//epsi = epsi - v*steer_value/Lf*actuator_delay/1000.0;
 					cte = polyeval(coeffs, x);
 
+
+					// Update the X we feed in based off our current state, and delay of our acutators
 					double v_mps = v*0.44704;	// Convert to Meters / second
 					double accel = throttle_value*10*0.44704; // 1* throttle is around 10 mph/s
 					double t_d = actuator_delay/1000.0;

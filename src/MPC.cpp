@@ -26,7 +26,7 @@ const double Lf = 2.67;
 
 double ref_cte = 0;
 double ref_epsi = 0;
-double ref_v = 75;
+double ref_v = 50;
 
 size_t x_start = 0;
 size_t y_start = x_start + N;
@@ -53,8 +53,8 @@ class FG_eval {
       //fg[0] += 2000*CppAD::pow(vars[cte_start + t] - ref_cte, 2); // improtant to give high weight to
       fg[0] += 1500*CppAD::pow(vars[cte_start + t] - ref_cte, 2); // improtant to give high weight to
       //fg[0] += 15*CppAD::pow(vars[epsi_start + t] - ref_epsi, 2);
-      //fg[0] += 50*CppAD::pow(vars[epsi_start + t] - ref_epsi, 2);
-      fg[0] += 150*CppAD::pow(vars[epsi_start + t] - ref_epsi, 2);
+      fg[0] += 50*CppAD::pow(vars[epsi_start + t] - ref_epsi, 2);
+      //fg[0] += 150*CppAD::pow(vars[epsi_start + t] - ref_epsi, 2);
 			fg[0] += CppAD::pow(vars[v_start + t] - ref_v, 2);
 		}
 
@@ -66,8 +66,8 @@ class FG_eval {
 
 		// Add further smoothness by taxing the rate of change of our acceleration and yaw
 		for (int t=0; t < N - 2; t++){
-      //fg[0] += 2500*CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);  // important to make sure we don't jerk too hard
-      fg[0] += 1250*CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);  // important to make sure we don't jerk too hard
+      //fg[0] += 2000*CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);  // important to make sure we don't jerk too hard
+      fg[0] += 1500*CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);  // important to make sure we don't jerk too hard
 			fg[0] += 50*CppAD::pow(vars[a_start + t + 1] - vars[a_start + t ], 2);
 		}
 

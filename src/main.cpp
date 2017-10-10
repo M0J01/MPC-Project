@@ -117,14 +117,14 @@ int main() {
 					auto coeffs = polyfit(ptsx_transform, ptsy_transform, 3);
 
 
-                    /*
+
+
           // Calculate vehicle state at t=t
           double x = 0;
-          double y = polyeval(coeffs, x);
-                 v = v*0.44704;
+          // double y = polyeval(coeffs, x);
+          double y = 0;
+          double v_mps = v * 0.44704;
                  psi = psi;
-          //double delta = j[1]["steering_angle"]; // turning rate
-          //delta = -delta;
           double cte = polyeval(coeffs, x);
           double epsi = -atan(coeffs[1]);
 
@@ -136,36 +136,43 @@ int main() {
           double a = throttle_value*10*0.44704;
 
           // Calculate vehicle state at t=t+1
-          x = -v*t_d*cos(epsi);
-          y = y - v*t_d*sin(epsi);
-          v = v + a*t_d;
-          psi = psi + delta * t_d /Lf;
-          cte += v*sin(epsi)*t_d;
-          epsi += v*delta * t_d/Lf;
+          x = v_mps * t_d * cos(epsi);
+          y = v_mps * t_d * sin(epsi);
+          v = v + a * t_d;
+          //psi = delta + delta * t_d /Lf;
+          psi = delta + v * delta * t_d /Lf;
+          cte += v_mps * sin(epsi) * t_d;
+          epsi += v * delta * t_d/Lf;
 
-      */
 
+
+    /*
           // Calculate vehicle state at t
           double cte = polyeval(coeffs, 0); // slopy cte, shortest distance from point to polynomial is real cte.
         	double epsi = -atan(coeffs[1]);
 
-          double steer_value = j[1]["steering_angle"];
-					double throttle_value = j[1]["throttle"];
+
 
           // Convert Unit Values
+          double throttle_value = j[1]["throttle"];
           double v_mps = v*0.44704;	// Convert to Meters / second
-					double accel = throttle_value*10*0.44704; // 1* throttle is around 10 mph/s
+          //double accel = throttle_value*10*0.44704; // 1.0 throttle is around 10 mph/s/s
+          double accel = throttle_value;
 					double t_d = actuator_delay/1000.0;
           double delta = j[1]["steering_angle"];
           delta = -delta;
-          // Calculate vehicle state at t=t+1
-          psi = delta + v_mps*delta*t_d/Lf;
-          cte += v*sin(epsi)*t_d;
-          v = v + accel*t_d;
-          double x = -(v_mps*t_d + 1/2*accel*t_d*t_d)*cos(epsi);
-          double y = -(v_mps*t_d + 1/2*accel*t_d*t_d)*sin(epsi);
-          epsi += v*delta*t_d/Lf;
 
+
+          // Calculate vehicle state at t=t+1
+          double x = -(v_mps*t_d + 1/2*accel*t_d*t_d)*cos(epsi);
+          double y = - (v_mps*t_d + 1/2*accel*t_d*t_d)*sin(epsi);
+          //psi = delta + v_mps*delta*t_d/Lf;
+          psi = delta + v_mps*delta*t_d/Lf;
+          cte += v_mps*sin(epsi)*t_d;
+          //v = v + accel*t_d;
+          v = v + accel*t_d;
+          epsi += v*delta*t_d/Lf;
+      */
 
           // Set State Vector to t+latency
 					Eigen::VectorXd state(6);

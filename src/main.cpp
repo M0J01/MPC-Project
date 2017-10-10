@@ -133,7 +133,7 @@ int main() {
           delta = -delta;
           double throttle_value = j[1]["throttle"];
           double t_d = actuator_delay/1000.0;
-          double a = throttle_value*10*0.44704;
+          double a = throttle_value * 10;  //* 0.44704; //V is
 
           // Calculate vehicle state at t=t+1
           x = v_mps * t_d * cos(epsi);
@@ -190,10 +190,6 @@ int main() {
 						next_x_vals.push_back(poly_inc*i);
 						next_y_vals.push_back(polyeval(coeffs, poly_inc*i));
 					}
-
-					//x = 0 + v_mps*cos(-psi)*(actuator_delay+20)/1000.0;
-					//std::cout << x << " X " << std::endl;
-
 					vector<double> mpc_x_vals;
 					vector<double> mpc_y_vals;
 
@@ -214,13 +210,20 @@ int main() {
 
 
 					json msgJson;
-					msgJson["steering_angle"] = -vars[0]/(deg2rad(25)*Lf);
-					msgJson["throttle"] = vars[1];
-					//msgJson["throttle"] = 1;
 
+          // Throttle Measurement Settings
+          //msgJson["steering_angle"] = 0;
+          //msgJson["throttle"] = 1;
+
+          // Set throttle value
+          msgJson["steering_angle"] = -vars[0]/(deg2rad(25)*Lf);
+          msgJson["throttle"] = vars[1];
+
+          // Set Next Car Position (Green Dots)
 					msgJson["next_x"] = next_x_vals;
 					msgJson["next_y"] = next_y_vals;
 
+          // Set Polynomial Values (Yellow Dots)
 					msgJson["mpc_x"] = mpc_x_vals;
 					msgJson["mpc_y"] = mpc_y_vals;
 

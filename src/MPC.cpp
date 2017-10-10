@@ -10,7 +10,7 @@ using CppAD::AD;
 // too many time steps makes it do crazy things
 size_t N = 10;
 // Larger than our actuator delay
-double dt = .15;	// greatly drives Computing Time
+double dt = .1;	// greatly drives Computing Time
 
 // This value assumes the model presented in the classroom is used.
 //

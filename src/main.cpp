@@ -99,17 +99,14 @@ int main() {
 
 					// Convert Map Ref Cords to Car Ref Cords
 					for (int i = 0; i < ptsx.size(); i++){
-
 						double shift_x = ptsx[i]-px;
 						double shift_y = ptsy[i]-py;
-
 						ptsx[i] = (shift_x * cos(0-psi) - shift_y*sin(0 - psi));
 						ptsy[i] = (shift_x * sin(0-psi) + shift_y*cos(0 - psi));
-
 					}
 
 
-					// Covnert vector Doubles to Eigens
+					// Convert vector Doubles to Eigens
 					// Usefull for passing to polyfit
 					double* ptrx = &ptsx[0];
 					double* ptry = &ptsy[0];
@@ -119,7 +116,36 @@ int main() {
 					// Calculate our poly coeffs
 					auto coeffs = polyfit(ptsx_transform, ptsy_transform, 3);
 
-					// Calculate current state
+
+                    /*
+          // Calculate vehicle state at t=t
+          double x = 0;
+          double y = polyeval(coeffs, x);
+                 v = v*0.44704;
+                 psi = psi;
+          //double delta = j[1]["steering_angle"]; // turning rate
+          //delta = -delta;
+          double cte = polyeval(coeffs, x);
+          double epsi = -atan(coeffs[1]);
+
+          // Calcuate Constants
+          double delta = j[1]["steering_angle"];
+          delta = -delta;
+          double throttle_value = j[1]["throttle"];
+          double t_d = actuator_delay/1000.0;
+          double a = throttle_value*10*0.44704;
+
+          // Calculate vehicle state at t=t+1
+          x = -v*t_d*cos(epsi);
+          y = y - v*t_d*sin(epsi);
+          v = v + a*t_d;
+          psi = psi + delta * t_d /Lf;
+          cte += v*sin(epsi)*t_d;
+          epsi += v*delta * t_d/Lf;
+
+      */
+
+          // Calculate vehicle state at t
           double cte = polyeval(coeffs, 0); // slopy cte, shortest distance from point to polynomial is real cte.
         	double epsi = -atan(coeffs[1]);
 
@@ -132,34 +158,18 @@ int main() {
 					double t_d = actuator_delay/1000.0;
           double delta = j[1]["steering_angle"];
           delta = -delta;
-          // Calculate Future State
-          // x = 0 - v*cos(psi)*actuator_delay/1000.0;
-					// y = 0 + v*sin(psi)*actuator_delay/1000.0;
+          // Calculate vehicle state at t=t+1
           psi = delta + v_mps*delta*t_d/Lf;
-          epsi += v*delta*t_d/Lf;
           cte += v*sin(epsi)*t_d;
           v = v + accel*t_d;
-          double x = -(v_mps*sin(psi) + 1/2*accel*sin(psi)*t_d)*t_d;
-          double y = 0 -(v_mps*sin(steer_value) + 1/2*accel*sin(steer_value)*t_d)*t_d;
-
-          // Calculate delta, which will factor into the new epsi
-
-          // Modified Value
+          double x = -(v_mps*t_d + 1/2*accel*t_d*t_d)*cos(epsi);
+          double y = -(v_mps*t_d + 1/2*accel*t_d*t_d)*sin(epsi);
+          epsi += v*delta*t_d/Lf;
 
 
-					//epsi = psi - atan(coeffs[1] + 2*px*coeffs[2] + 3*coeffs[3]*pow(px,2));
-					//cte = cte + v*sin(epsi)*actuator_delay/1000.0;
-					//epsi = epsi - v*steer_value/Lf*actuator_delay/1000.0;
-					//cte = polyeval(coeffs, x);
-
-
-					// Update the X we feed in based off our current state, and delay of our acutators
-
-
-
+          // Set State Vector to t+latency
 					Eigen::VectorXd state(6);
 					state << x, y, psi, v, cte, epsi;
-					//state << 0, 0, 0, v, cte, epsi;
 
 
 					auto vars = mpc.Solve(state, coeffs);
@@ -175,7 +185,7 @@ int main() {
 					}
 
 					//x = 0 + v_mps*cos(-psi)*(actuator_delay+20)/1000.0;
-					std::cout << x << " X " << std::endl;
+					//std::cout << x << " X " << std::endl;
 
 					vector<double> mpc_x_vals;
 					vector<double> mpc_y_vals;

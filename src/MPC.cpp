@@ -10,13 +10,8 @@ using CppAD::AD;
 // too many time steps makes it do crazy things
 size_t N = 10;
 // Larger than our actuator delay
-double dt = .175;	// greatly drives Computing Time
+double dt = .15;	// greatly drives Computing Time
 
-// double dt = .20
-// double ref_v = 75
-
-//double dt = .12
-//double ref_v = 50
 // This value assumes the model presented in the classroom is used.
 //
 // It was obtained by measuring the radius formed by running the vehicle in the
@@ -55,8 +50,11 @@ class FG_eval {
 
 		// Minimize the error by calculating it based on our state
 		for (int t = 0; t < N; t++){
-			fg[0] += 1500*CppAD::pow(vars[cte_start + t] - ref_cte, 2); // improtant to give high weight to
-			fg[0] += 50*CppAD::pow(vars[epsi_start + t] - ref_epsi, 2);
+      //fg[0] += 2000*CppAD::pow(vars[cte_start + t] - ref_cte, 2); // improtant to give high weight to
+      fg[0] += 1500*CppAD::pow(vars[cte_start + t] - ref_cte, 2); // improtant to give high weight to
+      //fg[0] += 15*CppAD::pow(vars[epsi_start + t] - ref_epsi, 2);
+      //fg[0] += 50*CppAD::pow(vars[epsi_start + t] - ref_epsi, 2);
+      fg[0] += 150*CppAD::pow(vars[epsi_start + t] - ref_epsi, 2);
 			fg[0] += CppAD::pow(vars[v_start + t] - ref_v, 2);
 		}
 
@@ -68,7 +66,8 @@ class FG_eval {
 
 		// Add further smoothness by taxing the rate of change of our acceleration and yaw
 		for (int t=0; t < N - 2; t++){
-			fg[0] += 1250*CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);  // important to make sure we don't jerk too hard
+      //fg[0] += 2500*CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);  // important to make sure we don't jerk too hard
+      fg[0] += 1250*CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);  // important to make sure we don't jerk too hard
 			fg[0] += 50*CppAD::pow(vars[a_start + t + 1] - vars[a_start + t ], 2);
 		}
 

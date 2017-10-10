@@ -119,33 +119,46 @@ int main() {
 					// Calculate our poly coeffs
 					auto coeffs = polyfit(ptsx_transform, ptsy_transform, 3);
 
-					// calculate cross track error, and psi error
-					double cte = polyeval(coeffs, 0); // slopy cte, shortest distance from point to polynomial is real cte.
-					//double epsi = -atan(coeffs[1]);
-					double steer_value = j[1]["steering_angle"];
+					// Calculate current state
+          double cte = polyeval(coeffs, 0); // slopy cte, shortest distance from point to polynomial is real cte.
+        	double epsi = -atan(coeffs[1]);
+
+          double steer_value = j[1]["steering_angle"];
 					double throttle_value = j[1]["throttle"];
 
-					//
-					double x = 0 - v*cos(psi)*actuator_delay/1000.0;
-					//double y = cte - v*sin(psi)*actuator_delay/1000.0;
-					double y = 0 + v*sin(psi)*actuator_delay/1000.0;
-					psi = psi;
+          // Convert Unit Values
+          double v_mps = v*0.44704;	// Convert to Meters / second
+					double accel = throttle_value*10*0.44704; // 1* throttle is around 10 mph/s
+					double t_d = actuator_delay/1000.0;
+          double delta = j[1]["steering_angle"];
+          delta = -delta;
+          // Calculate Future State
+          // x = 0 - v*cos(psi)*actuator_delay/1000.0;
+					// y = 0 + v*sin(psi)*actuator_delay/1000.0;
+          psi = delta + v_mps*delta*t_d/Lf;
+          epsi += v*delta*t_d/Lf;
+          cte += v*sin(epsi)*t_d;
+          v = v + accel*t_d;
+          double x = -(v_mps*sin(psi) + 1/2*accel*sin(psi)*t_d)*t_d;
+          double y = 0 -(v_mps*sin(steer_value) + 1/2*accel*sin(steer_value)*t_d)*t_d;
 
-					double epsi = psi - atan(coeffs[1] + 2*px*coeffs[2] + 3*coeffs[3]*pow(px,2));
+          // Calculate delta, which will factor into the new epsi
+
+          // Modified Value
+
+
+					//epsi = psi - atan(coeffs[1] + 2*px*coeffs[2] + 3*coeffs[3]*pow(px,2));
 					//cte = cte + v*sin(epsi)*actuator_delay/1000.0;
 					//epsi = epsi - v*steer_value/Lf*actuator_delay/1000.0;
-					cte = polyeval(coeffs, x);
+					//cte = polyeval(coeffs, x);
 
 
 					// Update the X we feed in based off our current state, and delay of our acutators
-					double v_mps = v*0.44704;	// Convert to Meters / second
-					double accel = throttle_value*10*0.44704; // 1* throttle is around 10 mph/s
-					double t_d = actuator_delay/1000.0;
-					x = -(v_mps*sin(psi) + 1/2*accel*sin(psi)*t_d)*t_d;
-					y = 0 -(v_mps*sin(steer_value) + 1/2*accel*sin(steer_value)*t_d)*t_d;
+
+
 
 					Eigen::VectorXd state(6);
-					state << x, y, 0, v, cte, epsi;
+					state << x, y, psi, v, cte, epsi;
 					//state << 0, 0, 0, v, cte, epsi;
 
 

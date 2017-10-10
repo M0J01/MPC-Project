@@ -140,7 +140,7 @@ int main() {
           y = v_mps * t_d * sin(epsi);
           v = v + a * t_d;
           //psi = delta + delta * t_d /Lf;
-          psi = delta + v * delta * t_d /Lf;
+          psi = delta * t_d /Lf;
           cte += v_mps * sin(epsi) * t_d;
           epsi += v * delta * t_d/Lf;
 

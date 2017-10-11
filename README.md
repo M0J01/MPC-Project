@@ -85,21 +85,21 @@ The following equations were used to calculate our states
 
 State t = t
 
-* x = 0
-* y = 0
-* v = v
-* psi = psi
-* epsi = -atan(coeffs[1]) // The simplified tangent of the derivative of our polynomial
-* cte = polyeval(coeffs, x) // The difference between our vehicle, and the y position our polynomial line
+* `x = 0`
+* `y = 0`
+* `v = v`
+* `psi = psi`
+* `epsi = -atan(coeffs[1])`                   // The tangent of the derivative of our polynomial
+* `cte = polyeval(coeffs, x)`                  // The difference between our vehicle, and the y position our polynomial line
 
 State t = t + latency
 
-* `x = v * 0.44704 * latency * cos(epsi)`` // The x portion of our vehicles movement during our latency.
-* `y = v * 0.44704 * latency * sin(epsi)`` // The y portion of our vehicles movement during our latency.
-* `v = v * 0.44704 + a * dt` // add our acceleration to our velocity
-* `psi = v * delta * t_d/Lf` // our bearing with respect to our coefficients.
-* `cte += v * 0.44704 * sin(epsi) * dt` // Our previous error, + our new y position.
-* `epsi += v * delta * dt` / Lf /0.// Our previous error, + our turning during our latency.
+* `x = v * 0.44704 * latency * cos(epsi)`  // The x portion of our vehicles movement during our latency.
+* `y = v * 0.44704 * latency * sin(epsi)`  // The y portion of our vehicles movement during our latency.
+* `psi = v * delta * t_d/Lf`                // our bearing with respect to our coefficients.
+* `cte += v * 0.44704 * sin(epsi) * dt`     // Our previous error, + our new y position.
+* `epsi += v * delta * dt / Lf`            // Our previous error, + our turning during our latency.
+* `v = v * 0.44704 + a * dt`                // add our acceleration to our velocity. Calculate this last
 
 It should be noted that the simulator provided `v` was converted from mph to (meters/second), and stored in the variable `v_mps`. This greatly improved our ability to accurately predict our future state (as our simulator x, y values are measured in meters).
 

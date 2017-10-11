@@ -10,7 +10,7 @@ using CppAD::AD;
 // too many time steps makes it do crazy things
 size_t N = 10;
 // Larger than our actuator delay
-double dt = .1;	// greatly drives Computing Time
+double dt = .125;	// greatly drives Computing Time
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -26,7 +26,7 @@ const double Lf = 2.67;
 
 double ref_cte = 0;
 double ref_epsi = 0;
-double ref_v = 50;
+double ref_v = 75*.44704;
 
 size_t x_start = 0;
 size_t y_start = x_start + N;
@@ -53,7 +53,7 @@ class FG_eval {
       //fg[0] += 2000*CppAD::pow(vars[cte_start + t] - ref_cte, 2); // improtant to give high weight to
       fg[0] += 1500*CppAD::pow(vars[cte_start + t] - ref_cte, 2); // improtant to give high weight to
       //fg[0] += 15*CppAD::pow(vars[epsi_start + t] - ref_epsi, 2);
-      fg[0] += 50*CppAD::pow(vars[epsi_start + t] - ref_epsi, 2);
+      fg[0] += 150*CppAD::pow(vars[epsi_start + t] - ref_epsi, 2);
       //fg[0] += 150*CppAD::pow(vars[epsi_start + t] - ref_epsi, 2);
 			fg[0] += CppAD::pow(vars[v_start + t] - ref_v, 2);
 		}

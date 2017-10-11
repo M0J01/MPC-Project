@@ -8,8 +8,8 @@ actuators of a simulated car, mainly the Steering and Acceleration.
 This program works in unison with a simulator, which you can find [here](https://github.com/udacity/self-driving-car-sim/releases).
 
 
-This project was completed as part of the UDACITY Self-Driving Car Engineer Nanodegree Program. For more information, or 
-to enroll today, please check [here.](https://www.udacity.com/course/self-driving-car-engineer-nanodegree--nd013) 
+This project was completed as part of the UDACITY Self-Driving Car Engineer Nanodegree Program. For more information, or
+to enroll today, please check [here.](https://www.udacity.com/course/self-driving-car-engineer-nanodegree--nd013)
 
 
 ## The Model
@@ -18,7 +18,7 @@ to enroll today, please check [here.](https://www.udacity.com/course/self-drivin
 The model uses a vehicle state vector in combination with a set of way points in order to predict
 the actuations that should be taken by the vehicle.
 
-The state vector is comprised of the **P** (x, y position), **V** (velocity), **Psi** (Bearing), **CTE** (Distance from Waypoint Polynomial), and ePsi (Bearing difference 
+The state vector is comprised of the **P** (x, y position), **V** (velocity), **Psi** (Bearing), **CTE** (Distance from Waypoint Polynomial), and ePsi (Bearing difference
 compared to polynomial).
 
 The waypoints are provided by the simulator (assumedly from Computer vision, Particle Filtering + mapping, or some other means).
@@ -27,19 +27,19 @@ These waypoints are converted from map coordinates to vehicle coordinates, and t
 Using our wapoint polynomial, we calculate 25 waypoints over 75m to be displayed in our simulator. This is done by
  sending the inputs to `polyeval()` to our `next_x_vals` and the returns to our `next_y_vals`. The simulator displays the
  values contained in next_x and next_y (with respect to the car).
- 
+
 ### Determine Actuations
 
 #### Solve()
 We use our state and polynomial calculated in the prior step as an input to our `Solve()` function. `Solve()` shapes an array
 to match the state vector, actuation values, and a predetermined number of future states `N` (more on `N` later). Each state and actuaion value
 comprises `N` number of elements in this vector, with the first element of each variable relfecting the current state, and each element
-thereafter representing an incremental future state. `Solve()` then polulates this array with minimum and maximum values for each variable, 
-such as maximum turning angle of +/- 25 degrees, or maximum acceleration of +/- 1. Finally, the array is initialized with 
+thereafter representing an incremental future state. `Solve()` then polulates this array with minimum and maximum values for each variable,
+such as maximum turning angle of +/- 25 degrees, or maximum acceleration of +/- 1. Finally, the array is initialized with
 the current state, and that state is locked so that it cannot be changed by our evaluator. `Solve()` then calls `fg_eval()`
 
 #### Evaluate
-`fg_eval` is preloaded with a **cost** function, which associates a certain cost with the state of our vehicle. The cost 
+`fg_eval` is preloaded with a **cost** function, which associates a certain cost with the state of our vehicle. The cost
 of each state is determined by multiplying the state (or group of states) with a weight. Highly weighted states
 will be very costly, and low values will be less costly.
 
@@ -56,20 +56,20 @@ These state equations, cost functions, and current state are fed into an optomiz
 #### IPOPT
 
 IPOPT uses the current state, cost functions, and state equations, `N` future states, and a time step `dt` (more on `dt` later) to calculate the minimum cost value possible. The state
-vector consists of dependant variables, while the actuators serve as independent variables. This means that the optomizer 
+vector consists of dependant variables, while the actuators serve as independent variables. This means that the optomizer
 can only affect the vehicle state (this a large portion of the cost) through the actuators.
 
 The output of our IPOPT calculations are returned to our `Sovle()` Function by means of the array we formatted earlier.
-The acceleration and turning value for our vehicle are extracted from this array, along with the position measurements predicted 
+The acceleration and turning value for our vehicle are extracted from this array, along with the position measurements predicted
 our optimizer. `Solve()` finally returns these values back to the main file. Where the main file implements the Acceleration
 /Turning commands, and plots the predicted x/y coordinates in Green.
 
 
 ## Selection of N and dt
 
-`dt` is the amount of time between each prediction, and `N` is the number of predictions to make. `dt` was chosen to 
+`dt` is the amount of time between each prediction, and `N` is the number of predictions to make. `dt` was chosen to
 be .175s in order accomdate the inability of the vehicle to make actuation adjustments faster than once every 100 ms. `N`
-was chosen to be 10 in order to give a reasonable glimpse into the future (1.7 seconds), while still being low enough to 
+was chosen to be 10 in order to give a reasonable glimpse into the future (1.7 seconds), while still being low enough to
 prevent the cost evaluation from making strange decisions.
 
 Previous `dt` values tried include `.12` seconds, `.1` seconds, `.2` seconds `.15` seconds. In all cases except `.2` seconds, the
@@ -82,20 +82,47 @@ pathing, which resulted in circular driving in some instances.
 
 ## Controls Latency
 
-The 100ms latency of the controls was combated through 2 measures. The first was setting `dt` the time step between predicted
-states to a value larger than the latency. This would cause the predictions to  acomadate the delay in controls, and any messaging
-between the simulator and program.
+The 100ms latency of the controls was combated through predicting the state of the vehicle after 100ms, and using said state as the input
+to our `Solve()` function. This was accomplished using basic position equations, and an estimated scalar acceleration with
+max acceleration at 10mph/s/s.
 
-The second, and more effective method was predicting the state of the vehicle after 100ms, and using that as the state input
-to our `Solve()` function. This was accomplished using basic position equations, and an estimated scaler acceleration with
-max acceleration at 10mph/s (measured by eyeball).
+### Controls Equations
+The following equations were used to calculate our states
 
-**Note** - The equations for predicting the future state of the vehicle could use a little tweaking, however they appear to be asound strategy
-for dealing with Latency. Setting the dt to a large value however, does not seem like a sound strategy, as it causes turning 
-to be clunky, and results in much less granular control of the vehicle. This could be dangerous in some instances. It is possible 
+State t = t
+* x = 0
+* y = 0
+* v = v
+* psi = psi
+* epsi = -atan(coeffs[1]) // The simplified tangent of the derivative of our polynomial
+* cte = polyeval(coeffs, x) // The difference between our vehicle, and the y position our polynomial line
+
+State t = t + latency
+
+* x = v*0.44704 * latency * cos(epsi) // The x portion of our vehicles movement during our latency.
+* y = v*0.44704 * latency * sin(epsi) // The y portion of our vehicles movement during our latency.
+* v = v + a * dt // v should be in mph, as that is what our v_ref uses.
+* psi = delta * t_d/Lf // our bearing with respect to our coefficients.
+* cte += v * 0.44704 * sin(epsi) * dt // Our previous error, + our new y position.
+* epsi += v * delta * dt / Lf // Our previous error, + our turning during our latency.
+
+It should be noted that the simulator provided `v` was converted from mph to meters / second for the calculations of x, y, and cte. psi and epsi seemed to perform better when
+`v` was left as is for performing their calculations. I believe this is due to the constant Lf accommodating for v in mph. Vt+1 was left as is in order to match with
+the ref_v speed set in our cost equation.
+
+
+### Acceleration Measuring Technique
+Our acceleration value was measure using a stopwatch, the Mph gauge on the simulator, and a fixed throttle and steering
+value of 1 and 0 respectively. The MPC simulation was first loaded, then, a stopwatch timer and the ./mpc file were
+initiated simultaneously. It was found that by measuring the Mph gauge after t = 1, 2, 3, 4 seconds during many (one t value measured per attempt), the value of the gauge roughly followed the equation Mph = t*10. Thus, the acceleration of the vehicle appears to be 10mph/s/s.
+
+
+**Note** - The equations for predicting the future state of the vehicle could use a little tweaking, however they appear to be a sound strategy
+for dealing with Latency. Setting the dt to a large value however, does not seem like a sound strategy, as it causes turning
+to be clunky, and results in much less granular control of the vehicle. This could be dangerous in some instances. It is possible
 that calculating a large time latency, and a short time latency prediction (2 predictions), might be a strategy to investigate
-for future developments. This would allow the large time delay to set the general path, and the small time delay to attemp to
-further optimize the vehicles manuevers. Additionally, limiting the actuators to only be able to act once every latency unit 
+for future developments. This would allow the large time delay to set the general path, and the small time delay to attempt to
+further optimize the vehicles maneuvers. Additionally, limiting the actuators to only be able to act once every latency unit
 would be a strategy worth investigating. This could be done by setting the maximum/minimum values in our f_g function, to be
 the previous actuation command, except where a latency timestep fell, where an actuation command would be set to max/min control bounds.
 This is mostly speculation though, and requires further efforts.
@@ -106,9 +133,9 @@ This is mostly speculation though, and requires further efforts.
 Although the program compiles, and is able to drive around the track successfully, there are some known issues with the code
 
 * Predicted Path (green) diverges from polynomial at far away waypoints. It is speculated that this is due to our predicted
-future state surpassing our waypoints, causing our cost fucntion to make strange decisions at outer time steps.
-* Slow Turning, likely caused by a high cost associated with change in turning over time. This could likely be solved by 
-adjusting weight values associated with turn rate, and change in turn rate. Preliminary tests have caused vehicle to verge 
+future state surpassing our waypoints, causing our cost function to make strange decisions at outer time steps.
+* Slow Turning, likely caused by a high cost associated with change in turning over time. This could likely be solved by
+adjusting weight values associated with turn rate, and change in turn rate. Preliminary tests have caused vehicle to verge
 off the road, however further investigation will likely prove fruitful.
 
 
@@ -133,7 +160,7 @@ off the road, however further investigation will likely prove fruitful.
   * Run either `install-mac.sh` or `install-ubuntu.sh`.
   * If you install from source, checkout to commit `e94b6e1`, i.e.
     ```
-    git clone https://github.com/uWebSockets/uWebSockets 
+    git clone https://github.com/uWebSockets/uWebSockets
     cd uWebSockets
     git checkout e94b6e1
     ```
@@ -157,7 +184,7 @@ off the road, however further investigation will likely prove fruitful.
        per this [forum post](https://discussions.udacity.com/t/incorrect-checksum-for-freed-object/313433/19).
   * Linux
     * You will need a version of Ipopt 3.12.1 or higher. The version available through `apt-get` is 3.11.x. If you can get that version to work great but if not there's a script `install_ipopt.sh` that will install Ipopt. You just need to download the source from the Ipopt [releases page](https://www.coin-or.org/download/source/Ipopt/).
-    * Then call `install_ipopt.sh` with the source directory as the first argument, ex: `sudo bash install_ipopt.sh Ipopt-3.12.1`. 
+    * Then call `install_ipopt.sh` with the source directory as the first argument, ex: `sudo bash install_ipopt.sh Ipopt-3.12.1`.
   * Windows: TODO. If you can use the Linux subsystem and follow the Linux instructions.
 * [CppAD](https://www.coin-or.org/CppAD/)
   * Mac: `brew install cppad`

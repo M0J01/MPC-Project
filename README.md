@@ -68,17 +68,11 @@ our optimizer. `Solve()` finally returns these values back to the main file. Whe
 ## Selection of N and dt
 
 `dt` is the amount of time between each prediction, and `N` is the number of predictions to make. `dt` was chosen to
-be .175s in order accomdate the inability of the vehicle to make actuation adjustments faster than once every 100 ms. `N`
-was chosen to be 10 in order to give a reasonable glimpse into the future (1.7 seconds), while still being low enough to
-prevent the cost evaluation from making strange decisions.
+be .125s in order reflect the current implementations inability of the vehicle to make actuation adjustments faster than once every 100ms, and a 25ms buffer for sever communications. `N` was chosen to be 10 in order to give a reasonable glimpse into the future (1.25 seconds), while still being few enough values to prevent the cost evaluation from making strange decisions.
 
-Previous `dt` values tried include `.12` seconds, `.1` seconds, `.2` seconds `.15` seconds. In all cases except `.2` seconds, the
-vehicle would either veer off the road, or crash into objects. When set to `0.2` seconds, turning around sharp corners became
-painfully slow.
+Previous `dt` values tried include .12 seconds, .1 seconds, .2 seconds .15 seconds. In all cases except .2 seconds, the vehicle would either veer off the road, or crash into objects. When set to 0.2 seconds, turning around sharp corners became painfully slow.
 
-Previous vaules of `N` include 20, 25, and 5. These values caused the vehicle to veer off the road, or rather strange
-pathing, which resulted in circular driving in some instances.
-
+Previous values of `N` include 20, 25, and 5. These values caused the vehicle to veer off the road, or use rather strange pathing. This some times resulted in circular driving.
 
 ## Controls Latency
 
@@ -121,6 +115,10 @@ Our acceleration value was measure using a stopwatch, the Mph gauge on the simul
 for dealing with Latency.  Additionally, limiting the actuators to only be able to act once every latency unit would be a strategy worth investigating. This could be done by setting the maximum/minimum values in our f_g function, to be
 the previous actuation command, except where a latency timestep fell, where an actuation command would be set to max/min control bounds.
 This is mostly speculation though, and requires further efforts.
+
+**Note** An alternative implementation to explore would be to store more predicted actuations
+from a given time t, a[t+1,t+2,t+3], and have those actuations contribute to future actuation
+predictions in some manner. An example of this would be calculating the difference between current actuations and prior predicted actuations for the same point in time, and then splitting the difference. (a[t+1]|t-1 & a[t]|t).
 
 
 ## Problems/ Known Bugs

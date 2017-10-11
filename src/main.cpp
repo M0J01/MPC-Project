@@ -138,11 +138,10 @@ int main() {
           // Calculate vehicle state at t=t+1
           x = v_mps * t_d * cos(epsi);
           y = v_mps * t_d * sin(epsi);
-          v = v*.44704 + a * t_d * .44704;
-          //psi = delta + delta * t_d /Lf;
-          psi = v * delta * t_d /Lf / .44704;
+          psi = v*.44704 * delta * t_d /Lf / .4470;
           cte += v_mps * sin(epsi) * t_d;
-          epsi += v * delta * t_d/Lf/.44704;
+          epsi += v*.44704 * delta * t_d/Lf/.44704;
+          v = v*.44704 + a * t_d * .44704;
 
 
 

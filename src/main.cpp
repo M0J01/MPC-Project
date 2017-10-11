@@ -138,46 +138,18 @@ int main() {
           // Calculate vehicle state at t=t+1
           x = v_mps * t_d * cos(epsi);
           y = v_mps * t_d * sin(epsi);
-          psi = v_mps * delta * t_d /Lf / .4470;
+          psi = v * delta * t_d /Lf;
           cte += v_mps * sin(epsi) * t_d;
-          epsi += v_mps * delta * t_d/Lf/.44704;
+          epsi += v * delta * t_d/Lf;
           v = v_mps + a * t_d; // * .44704;
-
-
-
-    /*
-          // Calculate vehicle state at t
-          double cte = polyeval(coeffs, 0); // slopy cte, shortest distance from point to polynomial is real cte.
-        	double epsi = -atan(coeffs[1]);
-
-
-
-          // Convert Unit Values
-          double throttle_value = j[1]["throttle"];
-          double v_mps = v*0.44704;	// Convert to Meters / second
-          //double accel = throttle_value*10*0.44704; // 1.0 throttle is around 10 mph/s/s
-          double accel = throttle_value;
-					double t_d = actuator_delay/1000.0;
-          double delta = j[1]["steering_angle"];
-          delta = -delta;
-
-
-          // Calculate vehicle state at t=t+1
-          double x = -(v_mps*t_d + 1/2*accel*t_d*t_d)*cos(epsi);
-          double y = - (v_mps*t_d + 1/2*accel*t_d*t_d)*sin(epsi);
-          //psi = delta + v_mps*delta*t_d/Lf;
-          psi = delta + v_mps*delta*t_d/Lf;
-          cte += v_mps*sin(epsi)*t_d;
-          //v = v + accel*t_d;
-          v = v + accel*t_d;
-          epsi += v*delta*t_d/Lf;
-      */
 
           // Set State Vector to t+latency
 					Eigen::VectorXd state(6);
 					state << x, y, psi, v, cte, epsi;
 
 
+
+          // Optomize next acutator states and predict x/y coords
 					auto vars = mpc.Solve(state, coeffs);
 
 					vector<double> next_x_vals;
@@ -192,11 +164,6 @@ int main() {
 					vector<double> mpc_x_vals;
 					vector<double> mpc_y_vals;
 
-					/*
-
-					mpc_x_vals.push_back(x);
-					mpc_y_vals.push_back(y);
-					*/
 					mpc_x_vals.push_back(0);
 					mpc_y_vals.push_back(0);
 					for (int i = 2; i < vars.size(); i++) {

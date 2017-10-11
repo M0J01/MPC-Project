@@ -90,6 +90,7 @@ max acceleration at 10mph/s/s.
 The following equations were used to calculate our states
 
 State t = t
+
 * x = 0
 * y = 0
 * v = v
@@ -99,31 +100,25 @@ State t = t
 
 State t = t + latency
 
-* x = v*0.44704 * latency * cos(epsi) // The x portion of our vehicles movement during our latency.
-* y = v*0.44704 * latency * sin(epsi) // The y portion of our vehicles movement during our latency.
-* v = v + a * dt // v should be in mph, as that is what our v_ref uses.
-* psi = delta * t_d/Lf // our bearing with respect to our coefficients.
-* cte += v * 0.44704 * sin(epsi) * dt // Our previous error, + our new y position.
-* epsi += v * delta * dt / Lf // Our previous error, + our turning during our latency.
+* `x = v * 0.44704 * latency * cos(epsi)`` // The x portion of our vehicles movement during our latency.
+* `y = v * 0.44704 * latency * sin(epsi)`` // The y portion of our vehicles movement during our latency.
+* `v = v * 0.44704 + a * dt` // add our acceleration to our velocity
+* `psi = v * delta * t_d/Lf` // our bearing with respect to our coefficients.
+* `cte += v * 0.44704 * sin(epsi) * dt` // Our previous error, + our new y position.
+* `epsi += v * delta * dt` / Lf /0.// Our previous error, + our turning during our latency.
 
-It should be noted that the simulator provided `v` was converted from mph to meters / second for the calculations of x, y, and cte. psi and epsi seemed to perform better when
-`v` was left as is for performing their calculations. I believe this is due to the constant Lf accommodating for v in mph. Vt+1 was left as is in order to match with
-the ref_v speed set in our cost equation.
+It should be noted that the simulator provided `v` was converted from mph to (meters/second), and stored in the variable `v_mps`. This greatly improved our ability to accurately predict our future state (as our simulator x, y values are measured in meters).
 
+Additionally, it is important to mention that `epsi` and `psi` were both multiplied by
+our simulator provided `v`, as opposed to our converted `v_mps`. The short reasoning
+behind this, is that it boosts performance. The long answer, is a little more fuzzy. I believe it has to do with the units of Lf. I believe our Lf is expecting v to be measured in mph.
 
 ### Acceleration Measuring Technique
-Our acceleration value was measure using a stopwatch, the Mph gauge on the simulator, and a fixed throttle and steering
-value of 1 and 0 respectively. The MPC simulation was first loaded, then, a stopwatch timer and the ./mpc file were
-initiated simultaneously. It was found that by measuring the Mph gauge after t = 1, 2, 3, 4 seconds during many (one t value measured per attempt), the value of the gauge roughly followed the equation Mph = t*10. Thus, the acceleration of the vehicle appears to be 10mph/s/s.
+Our acceleration value was measure using a stopwatch, the Mph gauge on the simulator, and a fixed throttle and steering value of 1 and 0 respectively. The MPC simulation was first loaded, then, a stopwatch timer and the ./mpc file were initiated simultaneously. It was found that by measuring the Mph gauge after t = 1, 2, 3, 4 seconds during many (one t value measured per attempt), the value of the gauge roughly followed the equation Mph = t*10. Thus, the acceleration of the vehicle appears to be 10mph/s. We then convert this to m/s/s
 
 
 **Note** - The equations for predicting the future state of the vehicle could use a little tweaking, however they appear to be a sound strategy
-for dealing with Latency. Setting the dt to a large value however, does not seem like a sound strategy, as it causes turning
-to be clunky, and results in much less granular control of the vehicle. This could be dangerous in some instances. It is possible
-that calculating a large time latency, and a short time latency prediction (2 predictions), might be a strategy to investigate
-for future developments. This would allow the large time delay to set the general path, and the small time delay to attempt to
-further optimize the vehicles maneuvers. Additionally, limiting the actuators to only be able to act once every latency unit
-would be a strategy worth investigating. This could be done by setting the maximum/minimum values in our f_g function, to be
+for dealing with Latency.  Additionally, limiting the actuators to only be able to act once every latency unit would be a strategy worth investigating. This could be done by setting the maximum/minimum values in our f_g function, to be
 the previous actuation command, except where a latency timestep fell, where an actuation command would be set to max/min control bounds.
 This is mostly speculation though, and requires further efforts.
 
@@ -137,6 +132,10 @@ future state surpassing our waypoints, causing our cost function to make strange
 * Slow Turning, likely caused by a high cost associated with change in turning over time. This could likely be solved by
 adjusting weight values associated with turn rate, and change in turn rate. Preliminary tests have caused vehicle to verge
 off the road, however further investigation will likely prove fruitful.
+* The cost function can be tweaked to provide a bit of a smoother ride. Some of the
+turning is a bit abrupt at some areas.
+* Some of the constants can be moved outside of our main loop. This would prevent
+reinitializing them, and save some us.
 
 
 

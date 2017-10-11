@@ -133,15 +133,15 @@ int main() {
           delta = -delta;
           double throttle_value = j[1]["throttle"];
           double t_d = actuator_delay/1000.0;
-          double a = throttle_value * 10;  //* 0.44704; //V is
+          double a = throttle_value * 10 * 0.44704; //V is
 
           // Calculate vehicle state at t=t+1
           x = v_mps * t_d * cos(epsi);
           y = v_mps * t_d * sin(epsi);
-          psi = v*.44704 * delta * t_d /Lf / .4470;
+          psi = v_mps * delta * t_d /Lf / .4470;
           cte += v_mps * sin(epsi) * t_d;
-          epsi += v*.44704 * delta * t_d/Lf/.44704;
-          v = v*.44704 + a * t_d * .44704;
+          epsi += v_mps * delta * t_d/Lf/.44704;
+          v = v_mps + a * t_d; // * .44704;
 
 
 

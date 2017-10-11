@@ -101,7 +101,7 @@ State t = t + latency
 * `epsi += v * delta * dt / Lf`            // Our previous error, + our turning during our latency.
 * `v = v * 0.44704 + a * dt`                // add our acceleration to our velocity. Calculate this last
 
-It should be noted that the simulator provided `v` was converted from mph to (meters/second), and stored in the variable `v_mps`. This greatly improved our ability to accurately predict our future state (as our simulator x, y values are measured in meters).
+It should be noted that the simulator provided `v` was converted from mph to m/s (meters/second), and stored in the variable `v_mps`. This greatly improved our ability to accurately predict our future state (as our simulator x, y values are measured in meters).
 
 Additionally, it is important to mention that `epsi` and `psi` were both multiplied by
 our simulator provided `v`, as opposed to our converted `v_mps`. The short reasoning

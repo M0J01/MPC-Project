@@ -136,8 +136,8 @@ int main() {
           double a = throttle_value * 10 * 0.44704; //V is
 
           // Calculate vehicle state at t=t+1
-          x = v_mps * t_d * cos(epsi);
-          y = v_mps * t_d * sin(epsi);
+          x = (v_mps + .5*a*t_d) * t_d * cos(epsi);
+          y = (v_mps + .5*a*t_d) * t_d * sin(epsi);
           psi = v * delta * t_d /Lf;
           cte += v_mps * sin(epsi) * t_d;
           epsi += v * delta * t_d/Lf;

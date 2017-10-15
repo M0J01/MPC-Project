@@ -114,7 +114,8 @@ int main() {
 					Eigen::Map<Eigen::VectorXd> ptsy_transform(ptry, 6);
 
 					// Calculate our poly coeffs
-					auto coeffs = polyfit(ptsx_transform, ptsy_transform, 3);
+          //auto coeffs = polyfit(ptsx_transform, ptsy_transform, 3);
+          auto coeffs = polyfit(ptsx_transform, ptsy_transform, 3);
 
 
 
@@ -155,6 +156,8 @@ int main() {
 					vector<double> next_x_vals;
 					vector<double> next_y_vals;
 
+
+
 					double poly_inc = 2.5;
 					double num_points = 25;
 					for (int i = 1; i < num_points; i++){
@@ -185,10 +188,15 @@ int main() {
           msgJson["steering_angle"] = -vars[0]/(deg2rad(25)*Lf);
           msgJson["throttle"] = vars[1];
 
+
+          next_x_vals = {2.5};
+          next_y_vals = {0};
           // Set Next Car Position (Green Dots)
 					msgJson["next_x"] = next_x_vals;
 					msgJson["next_y"] = next_y_vals;
 
+          mpc_x_vals = {2.5};
+          mpc_y_vals = {0};
           // Set Polynomial Values (Yellow Dots)
 					msgJson["mpc_x"] = mpc_x_vals;
 					msgJson["mpc_y"] = mpc_y_vals;

@@ -1,7 +1,7 @@
 # Model Predictive Controller
 
 
-## Descriton
+## Descripton
 The purpose of this program is to implement a model predictive controller to control the
 actuators of a simulated car, mainly the Steering and Acceleration.
 
